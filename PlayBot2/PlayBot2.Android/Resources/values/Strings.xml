@@ -5,5 +5,11 @@
   
   <string name="dev_pair">Dispositivos Vinculados</string>
   <string name="dev_search">Dispositivos Encontrados</string>
+
+  <string name="nav_control">Control</string>
+  <string name="nav_sensor">Sensores</string>
+  <string name="nav_web">Playbot Web</string>
+  <string name="open_drawer">Open drawer</string>
+  <string name="close_drawer">Close drawer</string>
   
 </resources>

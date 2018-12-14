@@ -11,18 +11,26 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Android.Support.V7.App;
-using V7Toolbar = Android.Support.V7.Widget.Toolbar;
+using SupportToolbar = Android.Support.V7.Widget.Toolbar;
+using SupportActionBar = Android.Support.V7.App.ActionBar;
 using Android.Bluetooth;
 using System.IO;
 using Java.Util;
 using System.Threading.Tasks;
 using Java.Lang;
+using Android.Support.V4.Widget;
+using Android.Support.Design.Widget;
+using PlayBot2.Droid.Fragments;
 
 namespace PlayBot2.Droid
 {
-    [Activity(Label = "PlayBot", Theme = "@style/MainTheme", ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
+    [Activity(Label = "", Icon = "@drawable/ic_consola", Theme = "@style/NoActionBarStyle", ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
     class GilActivity : AppCompatActivity
     {
+
+        private DrawerLayout drawerLayout;
+        private TextView mTitle;
+        private ImageView mLogo;
 
         private Java.Lang.String dataToSend;
 
@@ -32,28 +40,107 @@ namespace PlayBot2.Droid
         private Stream outStream = null;
         private Stream inStream = null;
 
+        string name;
+
         private static readonly UUID MY_UUID = UUID.FromString("00001101-0000-1000-8000-00805F9B34FB");
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
 
+            RequestWindowFeature(WindowFeatures.NoTitle);
             RequestWindowFeature(WindowFeatures.IndeterminateProgress);
-            SetContentView(Resource.Layout.control);
 
-            var toolbar = FindViewById<V7Toolbar>(Resource.Id.toolbar);
-            SetSupportActionBar(toolbar);
+            SetContentView(Resource.Layout.gil);
+
+            var toolBar = FindViewById<SupportToolbar>(Resource.Id.toolbar);
+            SetSupportActionBar(toolBar);
+            mTitle = (TextView)toolBar.FindViewById(Resource.Id.toolbar_title);
+            mLogo = (ImageView)toolBar.FindViewById(Resource.Id.toolbar_logo);
+
+            drawerLayout = FindViewById<DrawerLayout>(Resource.Id.drawer_layout);
+
+            NavigationView navigationView = FindViewById<NavigationView>(Resource.Id.nav_view);
+            navigationView.NavigationItemSelected += NavigationView_NavigationItemSelected;
+
+            var drawerToggle = new Android.Support.V7.App.ActionBarDrawerToggle(this, drawerLayout, toolBar, Resource.String.open_drawer, Resource.String.close_drawer);
+            drawerToggle.SyncState();
 
             string address = Intent.GetStringExtra("mac");
-            string name = Intent.GetStringExtra("name");
+            name = Intent.GetStringExtra("name");
 
-            SupportActionBar.Title = name;
+            Bundle args = new Bundle();
+            args.PutString("address", address);
+
+            var transaction = FragmentManager.BeginTransaction();
+            FragmentControl fragment = new FragmentControl();
+            fragment.Arguments = args;
+
+            transaction.Replace(Resource.Id.viewpager, fragment).AddToBackStack(null).Commit();
+            mTitle.SetText(Resource.String.nav_control);
+            mLogo.SetImageResource(Resource.Drawable.ic_consola);
 
             Toast.MakeText(this, address, ToastLength.Short).Show();
 
             CheckBt();
             Connect(address);
             
+        }
+
+        private void NavigationView_NavigationItemSelected(object sender, NavigationView.NavigationItemSelectedEventArgs e)
+        {
+            var transaction = FragmentManager.BeginTransaction();
+            var item = e.MenuItem.ItemId;
+
+            if (item == Resource.Id.nav_control)
+            {
+                FragmentControl fragment = new FragmentControl();
+                Bundle bd = new Bundle();
+                var message = e.MenuItem.TitleFormatted.ToString();
+                bd.PutString("address", message);
+                fragment.Arguments = bd;
+                transaction.Replace(Resource.Id.viewpager, fragment).AddToBackStack(null).Commit();
+
+                mTitle.SetText(Resource.String.nav_control);
+                mLogo.SetImageResource(Resource.Drawable.ic_consola);
+            }
+            else if (item == Resource.Id.nav_sensor)
+            {
+                FragmentSensores fragment = new FragmentSensores();
+                Bundle bd = new Bundle();
+                var message = e.MenuItem.TitleFormatted.ToString();
+                bd.PutString("address", message);
+                fragment.Arguments = bd;
+                transaction.Replace(Resource.Id.viewpager, fragment).AddToBackStack(null).Commit();
+
+                mTitle.SetText(Resource.String.nav_sensor);
+                mLogo.SetImageResource(Resource.Drawable.ic_sensor);
+            }
+            else if (item == Resource.Id.nav_web)
+            {
+                FragmentSensores fragment = new FragmentSensores();
+                Bundle bd = new Bundle();
+                var message = e.MenuItem.TitleFormatted.ToString();
+                bd.PutString("address", message);
+                fragment.Arguments = bd;
+                transaction.Replace(Resource.Id.viewpager, fragment).AddToBackStack(null).Commit();
+
+                mTitle.SetText(Resource.String.nav_web);
+                mLogo.SetImageResource(Resource.Drawable.ic_codigo);
+            }
+
+            drawerLayout.CloseDrawers();
+        }
+
+        public override bool OnOptionsItemSelected(IMenuItem item)
+        {
+            switch (item.ItemId)
+            {
+                case Android.Resource.Id.Home:
+                    drawerLayout.OpenDrawer(Android.Support.V4.View.GravityCompat.Start);
+                    return true;
+            }
+            return base.OnOptionsItemSelected(item);
         }
 
         private void CheckBt()
@@ -100,6 +187,9 @@ namespace PlayBot2.Droid
                 btSocket = device.CreateRfcommSocketToServiceRecord(MY_UUID);
                 btSocket.Connect();
                 Toast.MakeText(this, "Conexion Correcta", ToastLength.Short).Show();
+
+                dataToSend = new Java.Lang.String("Hola " + name);
+                writeData(dataToSend);
             }
             catch (System.Exception e)
             {

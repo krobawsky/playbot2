@@ -15,7 +15,7 @@ using V7Toolbar = Android.Support.V7.Widget.Toolbar;
 
 namespace PlayBot2.Droid
 {
-    [Activity(Label = "PlayBot", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
+    [Activity(Label = "PlayBot", Icon = "@drawable/ic_consola", Theme = "@style/NoActionBarStyle", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
     public class MainActivity : AppCompatActivity
     {
         
